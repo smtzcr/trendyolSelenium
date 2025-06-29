@@ -1,0 +1,5 @@
+selenium==4.19.0
+pytest
+pytest-html
+appium-python-client
+webdriver-manager
