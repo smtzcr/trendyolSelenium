@@ -8,21 +8,21 @@ pipeline {
     stages {
         stage('Install Python') {
             steps {
-                echo 'Python kuruluyor...'
+                echo 'Python Portable kuruluyor...'
                 bat '''
                     if not exist python-portable (
                         echo Python Portable indiriliyor...
-                        curl -L -o python.zip https://github.com/winpython/winpython/releases/download/4.8.20221024/Winpython64-3.10.8.0dot.exe
-
-                        REM Alternatif basit yöntem
                         curl -L -o python-embed.zip https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip
                         powershell -Command "Expand-Archive -Path python-embed.zip -DestinationPath python-portable -Force"
 
-                        REM get-pip.py indir
+                        echo get-pip.py indiriliyor...
                         curl -L -o python-portable\\get-pip.py https://bootstrap.pypa.io/get-pip.py
 
-                        REM pip kur
+                        echo pip kuruluyor...
                         python-portable\\python.exe python-portable\\get-pip.py
+
+                        echo pth dosyası düzenleniyor...
+                        echo import site >> python-portable\\python311._pth
                     )
                 '''
             }
@@ -33,6 +33,7 @@ pipeline {
                 echo 'Environment hazırlanıyor...'
                 bat '''
                     python-portable\\python.exe --version
+                    python-portable\\python.exe -m pip --version
                     python-portable\\python.exe -m pip install selenium webdriver-manager requests
                     if not exist reports mkdir reports
                     if not exist screenshots mkdir screenshots
@@ -42,10 +43,54 @@ pipeline {
         }
 
         stage('Run Tests') {
+            parallel {
+                stage('Home Page Tests') {
+                    steps {
+                        bat '''
+                            set PYTHONPATH=%CD%
+                            python-portable\\python.exe -m unittest tests.test_home_page -v
+                        '''
+                    }
+                }
+                stage('Search Tests') {
+                    steps {
+                        bat '''
+                            set PYTHONPATH=%CD%
+                            python-portable\\python.exe -m unittest tests.test_search_basic -v
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Generate Reports') {
             steps {
+                echo 'Raporlar oluşturuluyor...'
                 bat '''
-                    python-portable\\python.exe -m unittest tests.test_home_page -v
+                    set PYTHONPATH=%CD%
+                    python-portable\\python.exe run_tests.py --report-only
                 '''
+            }
+        }
+
+        stage('Publish Results') {
+            steps {
+                archiveArtifacts artifacts: 'reports/*.*, screenshots/*.png, logs/*.log', allowEmptyArchive: true
+
+                script {
+                    try {
+                        publishHTML([
+                            allowMissing: true,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'reports',
+                            reportFiles: '*.html',
+                            reportName: 'Test Report'
+                        ])
+                    } catch (Exception e) {
+                        echo "HTML publishing: ${e.getMessage()}"
+                    }
+                }
             }
         }
     }
@@ -53,11 +98,18 @@ pipeline {
     post {
         always {
             echo 'Pipeline tamamlandı'
-            archiveArtifacts artifacts: 'reports/*.*, screenshots/*.png, logs/*.log', allowEmptyArchive: true
+        }
+
+        success {
+            echo '✅ Tüm testler başarılı!'
         }
 
         failure {
             echo '❌ Pipeline başarısız!'
+        }
+
+        unstable {
+            echo '⚠️ Bazı testler başarısız!'
         }
     }
 }
