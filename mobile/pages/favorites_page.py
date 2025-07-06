@@ -12,4 +12,3 @@ class FavoritesPage:
 
     def is_product_in_favorites(self):
         return len(self.driver.find_elements(*self.FAVORITE_PRODUCT)) > 0
-

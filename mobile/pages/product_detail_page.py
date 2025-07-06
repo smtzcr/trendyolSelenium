@@ -20,4 +20,3 @@ class ProductDetailPage:
 
     def exit_product(self):
         self.driver.find_element(*self.RETURN_BUTTON).click()
-

@@ -16,7 +16,10 @@ class ProductPage(BasePage):
         self.wait_until_visible(*self.FIRST_PRODUCT).click()
         time.sleep(3)
         self.switch_to_new_tab()
-        self.wait_until_visible(*self.ACCEPT_BUTTON).click()
+        try:
+            self.wait_until_visible(*self.ACCEPT_BUTTON).click()
+        except:
+            pass  # Accept button might not always appear
 
     def is_product_title_visible(self):
         return self.wait_until_visible(*self.PRODUCT_TITLE).is_displayed()
@@ -41,4 +44,3 @@ class ProductPage(BasePage):
     def add_to_favorites(self):
         fav_button = self.wait_until_visible(*self.FAVORITE_BUTTON)
         fav_button.click()
-

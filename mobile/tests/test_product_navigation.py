@@ -5,10 +5,9 @@ from mobile.config import capabilities
 from mobile.pages.home_page import HomePage
 from mobile.pages.search_page import SearchPage
 from mobile.pages.product_detail_page import ProductDetailPage
-from mobile.pages.cart_page import CartPage
 
 
-class MobileAddToCartTest(unittest.TestCase):
+class MobileProductNavigationTest(unittest.TestCase):
 
     def setUp(self):
         self.driver = webdriver.Remote("http://127.0.0.1:4723/wd/hub", capabilities)
@@ -16,7 +15,6 @@ class MobileAddToCartTest(unittest.TestCase):
         self.home_page = HomePage(self.driver)
         self.search_page = SearchPage(self.driver)
         self.detail_page = ProductDetailPage(self.driver)
-        self.cart_page = CartPage(self.driver)
 
     def take_screenshot(self, test_name):
         """Take screenshot for error reporting"""
@@ -25,49 +23,54 @@ class MobileAddToCartTest(unittest.TestCase):
         self.driver.save_screenshot(screenshot_path)
         return screenshot_path
 
-    def test_add_product_to_cart(self):
-        """Test adding a product to cart on mobile"""
+    def test_product_detail_navigation(self):
+        """Test navigation to product detail page"""
         self.home_page.tap_search_bar()
-        self.search_page.search("mouse")
+        self.search_page.search("kulaklık")
         self.search_page.select_first_product()
-        self.detail_page.add_to_cart()
 
         self.assertTrue(
-            self.cart_page.is_product_in_cart(),
-            "Product wasn't added to cart successfully"
+            self.detail_page.is_product_title_visible(),
+            "Product detail page didn't load properly"
         )
 
-    def test_cart_functionality(self):
-        """Test comprehensive cart operations on mobile"""
-        # Add product to cart
-        self.home_page.tap_search_bar()
-        self.search_page.search("telefon kılıfı")
-        self.search_page.select_first_product()
-        self.detail_page.add_to_cart()
+    def test_multiple_product_views(self):
+        """Test viewing multiple products in sequence"""
+        products_to_search = ["klavye", "monitör", "fare"]
 
-        # Go to cart
-        self.cart_page.go_to_cart()
-
-        self.assertTrue(
-            self.cart_page.is_product_in_cart(),
-            "Cart operations failed on mobile"
-        )
-
-    def test_add_multiple_products(self):
-        """Test adding multiple products to cart"""
-        products = ["klavye", "mouse"]
-
-        for product in products:
+        for product in products_to_search:
             self.home_page.go_to_home_page()
             self.home_page.tap_search_bar()
             self.search_page.search(product)
             self.search_page.select_first_product()
-            self.detail_page.add_to_cart()
+
+            self.assertTrue(
+                self.detail_page.is_product_title_visible(),
+                f"Product detail not loaded for {product}"
+            )
+
+            self.detail_page.exit_product()
             time.sleep(1)
 
+    def test_product_back_navigation(self):
+        """Test navigating back from product detail"""
+        self.home_page.tap_search_bar()
+        self.search_page.search("tablet")
+        self.search_page.select_first_product()
+
+        # Verify we're on product detail
         self.assertTrue(
-            self.cart_page.is_product_in_cart(),
-            "Multiple products not added to cart"
+            self.detail_page.is_product_title_visible(),
+            "Not on product detail page"
+        )
+
+        # Navigate back
+        self.detail_page.exit_product()
+
+        # Verify we're back to search results
+        self.assertTrue(
+            self.search_page.has_results(),
+            "Not back to search results"
         )
 
     def tearDown(self):

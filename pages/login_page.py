@@ -25,4 +25,3 @@ class LoginPage(BasePage):
     def is_user_logged_in(self):
         element = self.wait_until_visible(*self.USERNAME_LABEL)
         return element.text.strip() == "Hesabım"
-
