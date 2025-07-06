@@ -1,8 +1,18 @@
 from appium.webdriver.common.appiumby import AppiumBy
-from mobile.base.base_page import BasePage
 
-class HomePage(BasePage):
-    PUSH_ALLOW_BTN = (AppiumBy.ID, "com.android.packageinstaller:id/permission_allow_button")
+class HomePage:
+    def __init__(self, driver):
+        self.driver = driver
 
-    def is_push_permission_visible(self):
-        return self.is_visible(*self.PUSH_ALLOW_BTN)
+    SEARCH_ICON = (AppiumBy.ID, "trendyol.com:id/imageViewSearch")
+    SEARCH_BAR = (AppiumBy.ID, "trendyol.com:id/editTextSearchView")
+    HOME_PAGE_TAB_BUTTON = (AppiumBy.ID, "trendyol.com:id/tab_home")
+
+    def is_search_icon_visible(self):
+        return self.driver.find_element(*self.SEARCH_ICON).is_displayed()
+
+    def tap_search_bar(self):
+        self.driver.find_element(*self.SEARCH_BAR).click()
+
+    def go_to_home_page(self):
+        self.driver.find_element(*self.HOME_PAGE_TAB_BUTTON).click()
